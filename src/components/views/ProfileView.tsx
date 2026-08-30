@@ -4,14 +4,12 @@ import { translations } from '../../lib/i18n';
 import { auth, signOut } from '../../lib/firebase';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { hapticFeedback } from '../../lib/haptics';
+import { ReferralHub } from '../profile/ReferralHub';
 import {
   Wallet,
   Hourglass,
   Flame,
   Gift,
-  Share2,
-  Copy,
-  Check,
   ChevronRight,
   User,
   Shield,
@@ -24,15 +22,11 @@ import {
   Trash2,
   Bell,
   Camera,
-  Users,
   Award,
-  Sparkles,
   TrendingUp,
   Download,
-  QrCode,
   Activity
 } from 'lucide-react';
-import QRCode from 'react-qr-code';
 import {
   LineChart,
   Line,
@@ -71,20 +65,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     setChatDrawerOpen,
     setNotifDrawerOpen,
     claimDailyStreak,
-    commissionPercent,
     signupBonusUser,
     copyText,
-    allUsers,
     submissions,
+    isAdmin,
   } = useApp();
 
   const t = translations[language];
   const { isInstallable, promptInstall } = usePWAInstall();
 
-  const [refTab, setRefTab] = useState<'overview' | 'friends'>('overview');
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
   const [claimingStreak, setClaimingStreak] = useState<boolean>(false);
-  const [showQR, setShowQR] = useState<boolean>(false);
 
   // Recharts: Last 30 Days Earnings Trend
   const last30Days = React.useMemo(() => {
@@ -118,27 +108,27 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const referralCode = profile?.referralCode || 'MFVIP88';
   const referralLink = `${window.location.origin}/?ref=${referralCode}`;
 
-  const handleCopyLink = async () => {
-    const ok = await copyText(referralLink, language === 'bn' ? 'রেফারেল লিংক কপি হয়েছে!' : 'Referral link copied!');
-    if (ok) {
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    }
-  };
-
   const handleShare = () => {
+    hapticFeedback.medium();
+    const shareTitle = 'Mail Factory - Trusted Gmail Exchange';
+    const shareText =
+      language === 'bn'
+        ? `Join Mail Factory using my referral code ${referralCode} and get bonus cash!`
+        : `Join Mail Factory using my referral code ${referralCode} and get bonus cash!`;
+
     if (navigator.share) {
       navigator.share({
-        title: 'Mail Factory - Trusted Gmail Exchange',
-        text: `Join Mail Factory using my referral code ${referralCode} and get bonus cash!`,
+        title: shareTitle,
+        text: shareText,
         url: referralLink,
-      }).catch(() => handleCopyLink());
+      }).catch(() => copyText(referralLink));
     } else {
-      handleCopyLink();
+      copyText(referralLink);
     }
   };
 
   const handleClaimStreak = async () => {
+    hapticFeedback.medium();
     setClaimingStreak(true);
     await claimDailyStreak();
     setClaimingStreak(false);
@@ -150,9 +140,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       setActiveTab('home');
     }
   };
-
-  // Calculate my referred friends
-  const myFriends = allUsers.filter((u) => u.referredBy === user?.uid);
 
   // Submissions stats
   const totalSubCount = profile?.total_submitted || submissions.length;
@@ -446,157 +433,45 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Referral Hub V3 with Tabs */}
-      <div className="rounded-3xl bg-white border border-slate-200 shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 text-white p-5">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <Gift className="w-5 h-5 text-amber-300" />
-            </div>
-            <div>
-              <h3 className="text-base font-black">{t.inviteAndEarn}</h3>
-              <p className="text-xs text-purple-200">
-                {t.commission}: <span className="text-amber-300 font-bold">{commissionPercent}%</span> per referral
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
-            <div className="bg-white/10 rounded-xl p-2.5 text-center backdrop-blur-sm">
-              <span className="text-xl font-black">{myFriends.length}</span>
-              <span className="text-[10px] uppercase font-bold text-white/80 block">{t.totalRefers}</span>
-            </div>
-            <div className="bg-white/10 rounded-xl p-2.5 text-center backdrop-blur-sm">
-              <span className="text-xl font-black">৳{(Number(profile?.referralEarnings) || 0).toFixed(2)}</span>
-              <span className="text-[10px] uppercase font-bold text-white/80 block">{t.totalEarned}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Referral Sub-Tabs */}
-        <div className="flex border-b border-slate-100 bg-slate-50">
-          <button
-            onClick={() => setRefTab('overview')}
-            className={`flex-1 py-2.5 text-xs font-bold transition-all ${
-              refTab === 'overview'
-                ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            {t.overview}
-          </button>
-          <button
-            onClick={() => setRefTab('friends')}
-            className={`flex-1 py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-              refTab === 'friends'
-                ? 'bg-white text-indigo-600 border-b-2 border-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>{t.myFriends} ({myFriends.length})</span>
-          </button>
-        </div>
-
-        {/* Tab 1: Overview */}
-        {refTab === 'overview' ? (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
-              <div>
-                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">
-                  YOUR CODE
-                </span>
-                <span className="text-base font-black font-mono text-indigo-700">
-                  {referralCode}
-                </span>
-              </div>
-              <button
-                onClick={handleCopyLink}
-                className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-black shadow hover:bg-indigo-700 active:scale-95 flex items-center gap-1"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedCode ? 'Copied!' : t.copy}</span>
-              </button>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-xs text-indigo-950 space-y-1">
-              <div className="font-extrabold flex items-center gap-1 text-indigo-700">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{language === 'bn' ? 'রেফারেল সুবিধা:' : 'Referral Perks:'}</span>
-              </div>
-              <p>✅ {language === 'bn' ? `বন্ধু রেজিস্ট্রেশন করলে আপনি পাবেন ৳${signupBonusUser} বোনাস` : `Instant ৳${signupBonusUser} on friend registration`}</p>
-              <p>✅ {language === 'bn' ? `বন্ধু জিমেইল বিক্রি করলে আপনি পাবেন ${commissionPercent}% আজীবন কমিশন` : `Earn ${commissionPercent}% lifetime commission on every valid sell`}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleShare}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-700 text-white text-xs font-black shadow hover:opacity-95 active:scale-98 flex items-center justify-center gap-2"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{t.shareReferral}</span>
-              </button>
-              
-              <button
-                onClick={() => setShowQR(!showQR)}
-                className="w-full py-3 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-black shadow-sm hover:bg-indigo-100 active:scale-98 flex items-center justify-center gap-2 transition-all"
-              >
-                <QrCode className="w-4 h-4" />
-                <span>{showQR ? (language === 'bn' ? 'লুকান' : 'Hide QR') : (language === 'bn' ? 'QR কোড দেখান' : 'Show QR Code')}</span>
-              </button>
-            </div>
-
-            {/* QR Code Reveal */}
-            {showQR && (
-              <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center animate-fade-in shadow-sm">
-                <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 mb-2">
-                  <QRCode value={referralLink} size={140} fgColor="#4f46e5" />
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Scan to register</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Tab 2: My Friends */
-          <div className="p-4 space-y-2 max-h-72 overflow-y-auto">
-            {myFriends.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-xs font-bold">
-                <Users className="w-8 h-8 mx-auto mb-1.5 opacity-30 text-indigo-600" />
-                <p>{language === 'bn' ? 'এখনো কোনো বন্ধু যুক্ত হয়নি।' : 'No referred friends yet.'}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {language === 'bn' ? 'আপনার রেফারেল লিংক শেয়ার করে বন্ধুদের আমন্ত্রণ জানান।' : 'Share your invite link to earn commissions.'}
-                </p>
-              </div>
-            ) : (
-              myFriends.map((friend, idx) => (
-                <div
-                  key={friend.uid || idx}
-                  className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
-                      {(friend.username || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-slate-800 block">{friend.username}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{friend.email}</span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-extrabold">
-                    Active
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
+      {/* Real-time Referral Earnings & Code Generator Sub-Component */}
+      <ReferralHub />
 
       {/* Settings & Info Section */}
       <div className="rounded-3xl bg-white border border-slate-200 p-2 shadow-sm divide-y divide-slate-100">
         <div className="px-3 py-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
           {t.account}
         </div>
+        {/* Admin Management Entry */}
+        <button
+          onClick={() => {
+            hapticFeedback.medium();
+            setActiveTab('admin');
+          }}
+          className="w-full flex items-center justify-between p-3 text-left bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-amber-500/10 hover:from-amber-500/20 hover:to-indigo-500/20 rounded-2xl border border-amber-300/60 transition-all shadow-sm"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 text-white flex items-center justify-center shadow-sm">
+              <Shield className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h5 className="text-xs font-black text-slate-900">
+                  {language === 'bn' ? 'এডমিন কন্ট্রোল ও ম্যানেজমেন্ট' : 'Admin Control & Management'}
+                </h5>
+                <span className="px-1.5 py-0.2 rounded bg-amber-500 text-white text-[9px] font-black uppercase">
+                  {isAdmin ? 'ACTIVE' : 'ENTER'}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-medium">
+                {language === 'bn'
+                  ? 'জিমেইল রিভিউ, পেমেন্ট অ্যাপ্রুভ ও ইউজার কন্ট্রোল'
+                  : 'Approve Gmails, Payouts, Users & Rates'}
+              </span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-amber-600" />
+        </button>
+
         <button
           onClick={onOpenEditProfile}
           className="w-full flex items-center justify-between p-3 text-left hover:bg-slate-50 rounded-2xl transition-colors"

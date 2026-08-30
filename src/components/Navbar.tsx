@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { translations } from '../lib/i18n';
-import { Bell, MessageSquare, Wallet, Globe, Download } from 'lucide-react';
+import { Bell, MessageSquare, Wallet, Globe, Download, Shield } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { hapticFeedback } from '../lib/haptics';
 
@@ -18,6 +18,7 @@ export const Navbar: React.FC = () => {
     setWithdrawModalOpen,
     user,
     profile,
+    isAdmin,
   } = useApp();
 
   const t = translations[language];
@@ -67,6 +68,21 @@ export const Navbar: React.FC = () => {
             >
               <Download className="w-3.5 h-3.5" />
               <span>Install App</span>
+            </button>
+          )}
+
+          {/* Admin Panel Button */}
+          {isAdmin && (
+            <button
+              onClick={() => {
+                hapticFeedback.medium();
+                setActiveTab('admin');
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black shadow-md border border-amber-300 animate-pulse transition-all"
+              title="Admin Dashboard"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Admin</span>
             </button>
           )}
 

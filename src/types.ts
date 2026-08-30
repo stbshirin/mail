@@ -44,6 +44,7 @@ export interface UserProfile {
   uid: string;
   username: string;
   email: string;
+  role?: 'admin' | 'user' | 'moderator' | string;
   phone?: string;
   photoURL?: string;
   balance: number;
@@ -120,6 +121,6 @@ export interface FAQItem {
   category?: string;
 }
 
-export type ActiveTab = 'home' | 'exchange' | 'history' | 'sellers' | 'profile';
+export type ActiveTab = 'home' | 'exchange' | 'history' | 'sellers' | 'profile' | 'admin';
 
 export type Language = 'bn' | 'en';

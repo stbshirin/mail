@@ -7,6 +7,7 @@ import { ExchangeView } from './components/views/ExchangeView';
 import { HistoryView } from './components/views/HistoryView';
 import { SellersView } from './components/views/SellersView';
 import { ProfileView } from './components/views/ProfileView';
+import { AdminView } from './components/views/AdminView';
 import { WithdrawModal } from './components/WithdrawModal';
 import { LiveChatDrawer } from './components/LiveChatDrawer';
 import { NotificationDrawer } from './components/NotificationDrawer';
@@ -60,6 +61,7 @@ const MainLayout: React.FC = () => {
             onOpenAbout={() => setIsAboutOpen(true)}
           />
         )}
+        {activeTab === 'admin' && <AdminView />}
       </main>
 
       {/* Floating Action Buttons */}
